@@ -276,6 +276,11 @@
   var settingsData = { departments: [], types: [] };
   var lookupTimeout = null;
 
+  // ===== Service Worker =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+
   // ===== API =====
   async function apiGet(params) {
     var url = APPS_SCRIPT_URL + '?' + Object.keys(params).map(function(k) {

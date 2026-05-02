@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Permissions-Policy" content="camera=*, microphone=*">
-<meta http-equiv="Feature-Policy" content="camera *; microphone *">
 <title>Moving Team Al-Maadi</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a73e8">
@@ -19,7 +17,7 @@
   .header { background: #1a73e8; color: white; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .header h2 { font-size: 18px; }
   .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 12px; transition: 0.2s; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
   .btn-primary { background: #1a73e8; color: white; }
   .btn-success { background: #34a853; color: white; }
   .btn:active { opacity: 0.8; transform: scale(0.98); }
@@ -28,10 +26,18 @@
   .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: inherit; background: white; }
   .form-group textarea { height: 80px; resize: none; }
   .form-group select { cursor: pointer; }
+  .combo-wrapper { position: relative; }
+  .combo-input-row { display: flex; gap: 6px; align-items: center; }
+  .combo-input-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: inherit; }
+  .combo-input-row .arr-btn { padding: 12px; background: #f0f2f5; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .combo-input-row .add-btn { padding: 12px; background: #34a853; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+  .combo-dropdown { display: none; position: absolute; width: 100%; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 999; max-height: 200px; overflow-y: auto; top: 100%; right: 0; }
+  .combo-dropdown.open { display: block; }
+  .combo-option { padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  .combo-option:hover { background: #e8f0fe; }
   .input-with-scan { display: flex; gap: 6px; align-items: center; }
   .input-with-scan input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: inherit; }
   .scan-btn { padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; white-space: nowrap; }
-  /* Login */
   .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a73e8, #0d47a1); }
   .login-card { background: white; border-radius: 16px; padding: 35px 30px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
   .login-brand { text-align: center; margin-bottom: 25px; }
@@ -39,7 +45,6 @@
   .brand-divider { height: 3px; background: linear-gradient(to right, transparent, #1a73e8, transparent); margin: 12px 0; border-radius: 2px; }
   .brand-sub { font-size: 11px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; direction: ltr; margin-bottom: 6px; }
   .brand-dev { font-size: 12px; color: #999; margin-top: 4px; }
-  /* Devices table */
   .devices-table-wrapper { overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .devices-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px; }
   .devices-table th { background: #1a73e8; color: white; padding: 10px 8px; text-align: right; font-weight: bold; white-space: nowrap; }
@@ -78,15 +83,15 @@
 </head>
 <body>
 
-<!-- الرابط الخاص بـ Apps Script -->
+<!-- الرابط الخاص بـ Apps Script - عدله بالرابط بتاعك -->
 <script>
-  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzcUTg49s4F9HZwIY8Ox5DVbYuY7caZin8FNNwS0y6ULLiGpQNkgNfqETYhVVcuKeMY-Q/exec';
+  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmM9fVyiTNA8Jp4uUz95oNd3ERMqhDSjQodXexlZIBM_FaPxVC9OxQRHN-eoRuuTiU0Q/exec';
 </script>
 
-<!-- Barcode/QR Modal -->
+<!-- QR/Barcode Modal -->
 <div id="qrModal">
   <div class="qr-box">
-    <div class="qr-title">📷 امسح الباركود أو QR Code</div>
+    <div class="qr-title">📷 امسح الباركود أو QR</div>
     <div id="reader"></div>
     <div id="qrStatus">وجه الكاميرا نحو الباركود</div>
     <button class="qr-close" onclick="closeQR()">✖ إغلاق</button>
@@ -154,15 +159,25 @@
     </div>
     <div class="form-group">
       <label>نوع الجهاز</label>
-      <select id="typeInput">
-        <option value="">-- اختر النوع --</option>
-      </select>
+      <div class="combo-wrapper">
+        <div class="combo-input-row">
+          <input type="text" id="typeInput" placeholder="اكتب أو اختر" autocomplete="off" oninput="filterCombo('typeDropdown', this.value)" onfocus="openCombo('typeDropdown')">
+          <button class="arr-btn" onclick="toggleCombo('typeDropdown')">▼</button>
+          <button class="add-btn" onclick="addToCombo('typeDropdown', 'typeInput', 'types')" title="إضافة جديد">+</button>
+        </div>
+        <div class="combo-dropdown" id="typeDropdown"></div>
+      </div>
     </div>
     <div class="form-group">
       <label>الإدارة</label>
-      <select id="deptInput">
-        <option value="">-- اختر الإدارة --</option>
-      </select>
+      <div class="combo-wrapper">
+        <div class="combo-input-row">
+          <input type="text" id="deptInput" placeholder="اكتب أو اختر" autocomplete="off" oninput="filterCombo('deptDropdown', this.value)" onfocus="openCombo('deptDropdown')">
+          <button class="arr-btn" onclick="toggleCombo('deptDropdown')">▼</button>
+          <button class="add-btn" onclick="addToCombo('deptDropdown', 'deptInput', 'departments')" title="إضافة جديد">+</button>
+        </div>
+        <div class="combo-dropdown" id="deptDropdown"></div>
+      </div>
     </div>
   </div>
 
@@ -182,9 +197,7 @@
     </div>
     <div class="form-group">
       <label>الصالة أو الغرفة</label>
-      <select id="fromRoom">
-        <option value="">-- اختر الدور أولاً --</option>
-      </select>
+      <select id="fromRoom"><option value="">-- اختر الدور أولاً --</option></select>
     </div>
     <div class="two-col">
       <div class="form-group">
@@ -214,9 +227,7 @@
     </div>
     <div class="form-group">
       <label>الصالة أو الغرفة</label>
-      <select id="toRoom">
-        <option value="">-- اختر الدور أولاً --</option>
-      </select>
+      <select id="toRoom"><option value="">-- اختر الدور أولاً --</option></select>
     </div>
     <div class="two-col">
       <div class="form-group">
@@ -258,12 +269,12 @@
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-  let currentUser = null;
-  let pageHistory = [];
-  let currentScanField = null;
-  let html5QrCode = null;
-  let settingsData = { departments: [], types: [] };
-  let lookupTimeout = null;
+  var currentUser = null;
+  var pageHistory = [];
+  var currentScanField = null;
+  var html5QrCode = null;
+  var settingsData = { departments: [], types: [] };
+  var lookupTimeout = null;
 
   // ===== Service Worker =====
   if ('serviceWorker' in navigator) {
@@ -287,14 +298,12 @@
     return await res.json();
   }
 
-  // ===== بناء الغرف حسب الدور =====
+  // ===== الأدوار والغرف =====
   var floorPrefix = { Basement:'B', Ground:'G', First:'F', Second:'S', Third:'T', Fourth:'FR' };
 
   function generateRooms(prefix) {
     var rooms = [];
-    for (var i = 1; i <= 80; i++) {
-      rooms.push(prefix + (i < 10 ? '0'+i : i));
-    }
+    for (var i = 1; i <= 80; i++) rooms.push(prefix + (i < 10 ? '0'+i : i));
     return rooms;
   }
 
@@ -302,22 +311,17 @@
     var floor = document.getElementById(floorId).value;
     var roomSel = document.getElementById(roomId);
     roomSel.innerHTML = '';
-    if (!floor) {
-      roomSel.innerHTML = '<option value="">-- اختر الدور أولاً --</option>';
-      return;
-    }
-    var prefix = floorPrefix[floor];
+    if (!floor) { roomSel.innerHTML = '<option value="">-- اختر الدور أولاً --</option>'; return; }
     var opt0 = document.createElement('option');
     opt0.value = ''; opt0.textContent = '-- اختر الصالة/الغرفة --';
     roomSel.appendChild(opt0);
-    generateRooms(prefix).forEach(function(r) {
+    generateRooms(floorPrefix[floor]).forEach(function(r) {
       var opt = document.createElement('option');
       opt.value = r; opt.textContent = r;
       roomSel.appendChild(opt);
     });
   }
 
-  // ===== تهيئة قوائم السيت =====
   function initSeatSelects() {
     ['fromSeatNo','toSeatNo'].forEach(function(id) {
       var sel = document.getElementById(id);
@@ -347,12 +351,8 @@
     document.getElementById('qrModal').classList.add('open');
     document.getElementById('qrStatus').textContent = 'جاري تشغيل الكاميرا...';
     document.getElementById('reader').innerHTML = '';
-
     setTimeout(function() {
-      if (html5QrCode) {
-        html5QrCode.stop().catch(function(){});
-        html5QrCode = null;
-      }
+      if (html5QrCode) { html5QrCode.stop().catch(function(){}); html5QrCode = null; }
       html5QrCode = new Html5Qrcode("reader");
       Html5Qrcode.getCameras().then(function(cameras) {
         if (!cameras || cameras.length === 0) {
@@ -394,15 +394,12 @@
   }
 
   function closeQR() {
-    if (html5QrCode) {
-      html5QrCode.stop().catch(function(){});
-      html5QrCode = null;
-    }
+    if (html5QrCode) { html5QrCode.stop().catch(function(){}); html5QrCode = null; }
     document.getElementById('qrModal').classList.remove('open');
     document.getElementById('reader').innerHTML = '';
   }
 
-  // ===== البحث التلقائي عن الجهاز =====
+  // ===== البحث التلقائي =====
   function lookupDevice() {
     clearTimeout(lookupTimeout);
     lookupTimeout = setTimeout(async function() {
@@ -426,6 +423,49 @@
     }, 600);
   }
 
+  // ===== القوائم المنسدلة =====
+  function openCombo(dropdownId) {
+    document.querySelectorAll('.combo-dropdown').forEach(function(d) {
+      if (d.id !== dropdownId) d.classList.remove('open');
+    });
+    document.getElementById(dropdownId).classList.add('open');
+  }
+  function toggleCombo(dropdownId) { document.getElementById(dropdownId).classList.toggle('open'); }
+  function filterCombo(dropdownId, val) {
+    var dropdown = document.getElementById(dropdownId);
+    dropdown.classList.add('open');
+    dropdown.querySelectorAll('.combo-option').forEach(function(opt) {
+      opt.style.display = opt.textContent.toLowerCase().includes(val.toLowerCase()) ? 'block' : 'none';
+    });
+  }
+  function fillCombo(dropdownId, inputId, items) {
+    var dropdown = document.getElementById(dropdownId);
+    dropdown.innerHTML = '';
+    (items || []).forEach(function(item) {
+      var div = document.createElement('div');
+      div.className = 'combo-option';
+      div.textContent = item;
+      div.onclick = function() { document.getElementById(inputId).value = item; dropdown.classList.remove('open'); };
+      dropdown.appendChild(div);
+    });
+  }
+  async function addToCombo(dropdownId, inputId, settingsKey) {
+    var val = document.getElementById(inputId).value.trim();
+    if (!val) { alert('من فضلك اكتب القيمة أولاً ثم اضغط +'); return; }
+    if (settingsData[settingsKey] && settingsData[settingsKey].includes(val)) { alert('هذه القيمة موجودة بالفعل'); return; }
+    if (!settingsData[settingsKey]) settingsData[settingsKey] = [];
+    settingsData[settingsKey].push(val);
+    var inputMap = { 'typeDropdown':'typeInput', 'deptDropdown':'deptInput' };
+    fillCombo(dropdownId, inputMap[dropdownId], settingsData[settingsKey]);
+    await apiPost({ action: 'addToSettings', key: settingsKey, value: val });
+    document.getElementById(dropdownId).classList.remove('open');
+  }
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.combo-wrapper')) {
+      document.querySelectorAll('.combo-dropdown').forEach(function(d) { d.classList.remove('open'); });
+    }
+  });
+
   // ===== التنقل =====
   function showPage(pageId) {
     document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
@@ -438,11 +478,7 @@
       pageHistory.push(pageId);
       document.getElementById('backBtn').style.display = 'block';
     }
-    var titles = { 
-      addMovementPage:'تسجيل حركة نقل', 
-      devicesPage:'الأجهزة', 
-      deviceDetailPage:'تفاصيل الجهاز'
-    };
+    var titles = { addMovementPage:'تسجيل حركة نقل', devicesPage:'الأجهزة', deviceDetailPage:'تفاصيل الجهاز' };
     if (titles[pageId]) document.getElementById('headerTitle').textContent = titles[pageId];
     window.scrollTo(0,0);
   }
@@ -492,24 +528,8 @@
   async function loadSettings() {
     var settings = await apiGet({ action: 'getSettings' });
     settingsData = settings;
-    
-    // تعبئة قائمة الأنواع
-    var typeSel = document.getElementById('typeInput');
-    typeSel.innerHTML = '<option value="">-- اختر النوع --</option>';
-    (settings.types || []).forEach(function(type) {
-      var opt = document.createElement('option');
-      opt.value = type; opt.textContent = type;
-      typeSel.appendChild(opt);
-    });
-    
-    // تعبئة قائمة الإدارات
-    var deptSel = document.getElementById('deptInput');
-    deptSel.innerHTML = '<option value="">-- اختر الإدارة --</option>';
-    (settings.departments || []).forEach(function(dept) {
-      var opt = document.createElement('option');
-      opt.value = dept; opt.textContent = dept;
-      deptSel.appendChild(opt);
-    });
+    fillCombo('typeDropdown', 'typeInput', settings.types);
+    fillCombo('deptDropdown', 'deptInput', settings.departments);
   }
 
   // ===== تسجيل حركة =====
@@ -541,7 +561,6 @@
     var result = await apiPost(data);
     if (result.success) {
       document.getElementById('movementAlert').innerHTML = '<div class="alert alert-success">✅ ' + result.message + '</div>';
-      // مسح السيريال ورقم الأصل فقط - الباقي يفضل زي ما هو
       document.getElementById('serial').value = '';
       document.getElementById('assetNo').value = '';
       setTimeout(function() { document.getElementById('movementAlert').innerHTML = ''; }, 2000);
@@ -550,7 +569,7 @@
     }
   }
 
-  // ===== عرض الأجهزة (جدول) =====
+  // ===== عرض الأجهزة =====
   async function loadDevices() {
     showPage('devicesPage');
     document.getElementById('searchInput').value = '';
@@ -558,14 +577,14 @@
     var devices = await apiGet({ action: 'getDevices', search: '' });
     renderDevices(devices);
   }
-  
+
   async function searchDevices() {
     var search = document.getElementById('searchInput').value.trim();
     document.getElementById('devicesList').innerHTML = '<div class="loading">جاري البحث...</div>';
     var devices = await apiGet({ action: 'getDevices', search: search });
     renderDevices(devices);
   }
-  
+
   function renderDevices(devices) {
     if (!devices || devices.length === 0) {
       document.getElementById('devicesList').innerHTML = '<div class="loading">لا توجد أجهزة</div>';
@@ -576,15 +595,10 @@
       '</tr></thead><tbody>';
     devices.forEach(function(d) {
       var seat = (d.seatNo||'') + (d.seatLetter||'');
-      var safeDevice = JSON.stringify(d).replace(/'/g,"&​#39;");
+      var safeDevice = JSON.stringify(d).replace(/'/g,"&#39;");
       html += '<tr onclick=\'showDeviceDetail(' + safeDevice + ')\'>' +
-        '<td>'+(d.type||'-')+'</td>'+
-        '<td>'+(d.assetNo||'-')+'</td>'+
-        '<td>'+(d.serial||'-')+'</td>'+
-        '<td>'+(d.floor||'-')+'</td>'+
-        '<td>'+(d.room||'-')+'</td>'+
-        '<td>'+(seat||'-')+'</td>'+
-        '<td>'+(d.department||'-')+'</td>'+
+        '<td>'+(d.type||'-')+'</td><td>'+(d.assetNo||'-')+'</td><td>'+(d.serial||'-')+'</td>' +
+        '<td>'+(d.floor||'-')+'</td><td>'+(d.room||'-')+'</td><td>'+(seat||'-')+'</td><td>'+(d.department||'-')+'</td>' +
         '</tr>';
     });
     html += '</tbody></table></div>';

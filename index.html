@@ -95,6 +95,11 @@
 </head>
 <body>
 
+<!-- الرابط الخاص بـ Apps Script -->
+<script>
+  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEQ0QwEdNzIXNJCd-VRyBhUcmWbe9mkFF7J8W29UbQ2ycz5mL19QgR3zmn0CKxuVjw2g/exec';
+</script>
+
 <!-- Barcode/QR Modal -->
 <div id="qrModal">
   <div class="qr-box">
@@ -344,6 +349,28 @@
   let filterOffset = 0;
   let filterLimit = 20;
 
+  // ===== Service Worker =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+
+  // ===== API =====
+  async function apiGet(params) {
+    var url = APPS_SCRIPT_URL + '?' + Object.keys(params).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+    var res = await fetch(url);
+    return await res.json();
+  }
+
+  async function apiPost(data) {
+    var res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return await res.json();
+  }
+
   // ===== بناء الغرف حسب الدور =====
   var floorPrefix = { Basement:'B', Ground:'G', First:'F', Second:'S', Third:'T', Fourth:'FR' };
 
@@ -481,27 +508,24 @@
   // ===== البحث التلقائي عن الجهاز =====
   function lookupDevice() {
     clearTimeout(lookupTimeout);
-    lookupTimeout = setTimeout(function() {
+    lookupTimeout = setTimeout(async function() {
       var serial = document.getElementById('serial').value.trim();
       var assetNo = document.getElementById('assetNo').value.trim();
       if (!serial && !assetNo) return;
-      google.script.run
-        .withSuccessHandler(function(device) {
-          if (device) {
-            document.getElementById('typeInput').value = device.type || '';
-            document.getElementById('deptInput').value = device.department || '';
-            if (device.floor) {
-              document.getElementById('fromFloor').value = device.floor;
-              updateRooms('fromFloor', 'fromRoom');
-              setTimeout(function() {
-                document.getElementById('fromRoom').value = device.room || '';
-              }, 50);
-            }
-            document.getElementById('fromSeatNo').value = device.seatNo || '';
-            document.getElementById('fromSeatLetter').value = device.seatLetter || '';
-          }
-        })
-        .findDevice(serial, assetNo);
+      var device = await apiGet({ action: 'findDevice', serial: serial, assetNo: assetNo });
+      if (device && !device.error) {
+        document.getElementById('typeInput').value = device.type || '';
+        document.getElementById('deptInput').value = device.department || '';
+        if (device.floor) {
+          document.getElementById('fromFloor').value = device.floor;
+          updateRooms('fromFloor', 'fromRoom');
+          setTimeout(function() {
+            document.getElementById('fromRoom').value = device.room || '';
+          }, 50);
+        }
+        document.getElementById('fromSeatNo').value = device.seatNo || '';
+        document.getElementById('fromSeatLetter').value = device.seatLetter || '';
+      }
     }, 600);
   }
 
@@ -523,18 +547,15 @@
   function fillCombo(dropdownId, inputId, items) {
     var dropdown = document.getElementById(dropdownId);
     dropdown.innerHTML = '';
-    items.forEach(function(item) {
+    (items || []).forEach(function(item) {
       var div = document.createElement('div');
       div.className = 'combo-option';
       div.textContent = item;
-      div.onclick = function() {
-        document.getElementById(inputId).value = item;
-        dropdown.classList.remove('open');
-      };
+      div.onclick = function() { document.getElementById(inputId).value = item; dropdown.classList.remove('open'); };
       dropdown.appendChild(div);
     });
   }
-  function addToCombo(dropdownId, inputId, settingsKey) {
+  async function addToCombo(dropdownId, inputId, settingsKey) {
     var val = document.getElementById(inputId).value.trim();
     if (!val) { alert('من فضلك اكتب القيمة أولاً ثم اضغط +'); return; }
     if (settingsData[settingsKey] && settingsData[settingsKey].includes(val)) { alert('هذه القيمة موجودة بالفعل'); return; }
@@ -542,43 +563,9 @@
     settingsData[settingsKey].push(val);
     var inputMap = { 'typeDropdown':'typeInput', 'deptDropdown':'deptInput' };
     fillCombo(dropdownId, inputMap[dropdownId], settingsData[settingsKey]);
-    google.script.run.addToSettings(settingsKey, val);
+    await apiPost({ action: 'addToSettings', key: settingsKey, value: val });
     document.getElementById(dropdownId).classList.remove('open');
   }
-
-  // ===== قوائم الغرف (Combo Box) =====
-  function openRoomCombo(dropdownId) {
-    document.querySelectorAll('.combo-dropdown').forEach(function(d) {
-      if (d.id !== dropdownId) d.classList.remove('open');
-    });
-    document.getElementById(dropdownId).classList.add('open');
-  }
-  function toggleRoomCombo(dropdownId) { document.getElementById(dropdownId).classList.toggle('open'); }
-  function filterRoomCombo(dropdownId, val) {
-    var dropdown = document.getElementById(dropdownId);
-    dropdown.classList.add('open');
-    dropdown.querySelectorAll('.combo-option').forEach(function(opt) {
-      opt.style.display = opt.textContent.toLowerCase().includes(val.toLowerCase()) ? 'block' : 'none';
-    });
-  }
-  function addRoomToCombo(dropdownId, inputId) {
-    var val = document.getElementById(inputId).value.trim();
-    if (!val) { alert('من فضلك اكتب القيمة أولاً ثم اضغط +'); return; }
-    var dropdown = document.getElementById(dropdownId);
-    var existingOptions = Array.from(dropdown.querySelectorAll('.combo-option')).map(opt => opt.textContent);
-    if (existingOptions.includes(val)) { alert('هذه القيمة موجودة بالفعل'); return; }
-    
-    var div = document.createElement('div');
-    div.className = 'combo-option';
-    div.textContent = val;
-    div.onclick = function() {
-      document.getElementById(inputId).value = val;
-      dropdown.classList.remove('open');
-    };
-    dropdown.appendChild(div);
-    document.getElementById(dropdownId).classList.remove('open');
-  }
-
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.combo-wrapper')) {
       document.querySelectorAll('.combo-dropdown').forEach(function(d) { d.classList.remove('open'); });
@@ -615,7 +602,7 @@
   }
 
   // ===== اللوجين =====
-  function handleLogin() {
+  async function handleLogin() {
     var email = document.getElementById('loginEmail').value.trim();
     var password = document.getElementById('loginPassword').value.trim();
     if (!email || !password) {
@@ -623,23 +610,21 @@
       return;
     }
     document.getElementById('loginAlert').innerHTML = '<div class="alert alert-info">جاري التحقق...</div>';
-    google.script.run
-      .withSuccessHandler(function(result) {
-        if (result.success) {
-          currentUser = result;
-          currentUser.email = email;
-          document.getElementById('loginPage').style.display = 'none';
-          document.getElementById('mainHeader').style.display = 'block';
-          document.getElementById('userName').textContent = email.split('@')[0];
-          document.getElementById('userRole').textContent = result.role;
-          loadSettings();
-          showPage('homePage');
-        } else {
-          document.getElementById('loginAlert').innerHTML = '<div class="alert alert-error">' + result.message + '</div>';
-        }
-      })
-      .login(email, password);
+    var result = await apiGet({ action: 'login', email: email, password: password });
+    if (result.success) {
+      currentUser = result;
+      currentUser.email = email;
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('mainHeader').style.display = 'block';
+      document.getElementById('userName').textContent = email.split('@')[0];
+      document.getElementById('userRole').textContent = result.role;
+      loadSettings();
+      showPage('homePage');
+    } else {
+      document.getElementById('loginAlert').innerHTML = '<div class="alert alert-error">' + (result.message || 'خطأ في تسجيل الدخول') + '</div>';
+    }
   }
+
   function handleLogout() {
     closeQR();
     currentUser = null;
@@ -651,18 +636,15 @@
   }
 
   // ===== الإعدادات =====
-  function loadSettings() {
-    google.script.run
-      .withSuccessHandler(function(settings) {
-        settingsData = settings;
-        fillCombo('typeDropdown', 'typeInput', settings.types || []);
-        fillCombo('deptDropdown', 'deptInput', settings.departments || []);
-      })
-      .getSettings();
+  async function loadSettings() {
+    var settings = await apiGet({ action: 'getSettings' });
+    settingsData = settings;
+    fillCombo('typeDropdown', 'typeInput', settings.types);
+    fillCombo('deptDropdown', 'deptInput', settings.departments);
   }
 
   // ===== تسجيل حركة =====
-  function submitMovement() {
+  async function submitMovement() {
     var serial = document.getElementById('serial').value.trim();
     var assetNo = document.getElementById('assetNo').value.trim();
     if (!serial && !assetNo) {
@@ -670,6 +652,7 @@
       return;
     }
     var data = {
+      action: 'addMovement',
       user: currentUser.email,
       serial: serial,
       assetNo: assetNo,
@@ -687,39 +670,36 @@
       ticketNo: document.getElementById('ticketNo').value.trim()
     };
     document.getElementById('movementAlert').innerHTML = '<div class="alert alert-info">جاري الحفظ...</div>';
-    google.script.run
-      .withSuccessHandler(function(result) {
-        if (result.success) {
-          document.getElementById('movementAlert').innerHTML = '<div class="alert alert-success">✅ ' + result.message + '</div>';
-          // مسح السيريال ورقم الأصل فقط - الباقي يفضل زي ما هو
-          document.getElementById('serial').value = '';
-          document.getElementById('assetNo').value = '';
-          document.getElementById('ticketNo').value = '';
-          setTimeout(function() {
-            document.getElementById('movementAlert').innerHTML = '';
-          }, 2000);
-        } else {
-          document.getElementById('movementAlert').innerHTML = '<div class="alert alert-error">حدث خطأ، حاول مرة أخرى</div>';
-        }
-      })
-      .addMovement(data);
+    var result = await apiPost(data);
+    if (result.success) {
+      document.getElementById('movementAlert').innerHTML = '<div class="alert alert-success">✅ ' + result.message + '</div>';
+      // مسح السيريال ورقم الأصل فقط - الباقي يفضل زي ما هو
+      document.getElementById('serial').value = '';
+      document.getElementById('assetNo').value = '';
+      document.getElementById('ticketNo').value = '';
+      setTimeout(function() { document.getElementById('movementAlert').innerHTML = ''; }, 2000);
+    } else {
+      document.getElementById('movementAlert').innerHTML = '<div class="alert alert-error">حدث خطأ، حاول مرة أخرى</div>';
+    }
   }
 
   // ===== عرض الأجهزة (جدول) =====
-  function loadDevices() {
+  async function loadDevices() {
     showPage('devicesPage');
     document.getElementById('searchInput').value = '';
     document.getElementById('devicesList').innerHTML = '<div class="loading">جاري التحميل...</div>';
-    google.script.run.withSuccessHandler(renderDevices).getDevices('');
+    var devices = await apiGet({ action: 'getDevices', search: '' });
+    renderDevices(devices);
     
     // تحميل آخر 10 عمليات تحرك
     loadRecentDevices();
   }
   
-  function searchDevices() {
+  async function searchDevices() {
     var search = document.getElementById('searchInput').value.trim();
     document.getElementById('devicesList').innerHTML = '<div class="loading">جاري البحث...</div>';
-    google.script.run.withSuccessHandler(renderDevices).getDevices(search);
+    var devices = await apiGet({ action: 'getDevices', search: search });
+    renderDevices(devices);
   }
   
   function renderDevices(devices) {
@@ -734,13 +714,8 @@
       var seat = (d.seatNo||'') + (d.seatLetter||'');
       var safeDevice = JSON.stringify(d).replace(/'/g,"&​#39;");
       html += '<tr onclick=\'showDeviceDetail(' + safeDevice + ')\'>' +
-        '<td>'+(d.type||'-')+'</td>'+
-        '<td>'+(d.assetNo||'-')+'</td>'+
-        '<td>'+(d.serial||'-')+'</td>'+
-        '<td>'+(d.floor||'-')+'</td>'+
-        '<td>'+(d.room||'-')+'</td>'+
-        '<td>'+(seat||'-')+'</td>'+
-        '<td>'+(d.department||'-')+'</td>'+
+        '<td>'+(d.type||'-')+'</td><td>'+(d.assetNo||'-')+'</td><td>'+(d.serial||'-')+'</td>' +
+        '<td>'+(d.floor||'-')+'</td><td>'+(d.room||'-')+'</td><td>'+(seat||'-')+'</td><td>'+(d.department||'-')+'</td>' +
         '</tr>';
     });
     html += '</tbody></table></div>';
@@ -748,13 +723,10 @@
   }
 
   // ===== تحميل آخر 10 عمليات تحرك (جديد) =====
-  function loadRecentDevices() {
+  async function loadRecentDevices() {
     document.getElementById('recentDevicesList').innerHTML = '<div class="loading">جاري التحميل...</div>';
-    google.script.run
-      .withSuccessHandler(function(recentDevices) {
-        renderRecentDevices(recentDevices);
-      })
-      .getRecentDevices();
+    var recentDevices = await apiGet({ action: 'getRecentDevices' });
+    renderRecentDevices(recentDevices);
   }
 
   function renderRecentDevices(recentDevices) {
@@ -762,7 +734,6 @@
       document.getElementById('recentDevicesList').innerHTML = '<div class="loading">لا توجد عمليات حركة</div>';
       return;
     }
-    
     var html = '';
     recentDevices.forEach(function(device) {
       var fromSeat = (device.fromSeatNo||'') + (device.fromSeatLetter||'');
@@ -780,7 +751,7 @@
   }
 
   // ===== فلترة حسب الدور والغرفة (جديد) =====
-  function filterByFloorRoom() {
+  async function filterByFloorRoom() {
     var floor = document.getElementById('filterFloor').value;
     var room = document.getElementById('filterRoom').value;
     
@@ -792,11 +763,8 @@
     filterOffset = 0;
     document.getElementById('filterDevicesList').innerHTML = '<div class="loading">جاري التحميل...</div>';
     
-    google.script.run
-      .withSuccessHandler(function(devices) {
-        renderFilterDevices(devices, true);
-      })
-      .getDevicesByFloorRoom(floor, room);
+    var devices = await apiGet({ action: 'getDevicesByFloorRoom', floor: floor, room: room });
+    renderFilterDevices(devices, true);
   }
 
   function renderFilterDevices(devices, isFirstLoad = false) {
@@ -820,13 +788,8 @@
       var seat = (d.seatNo||'') + (d.seatLetter||'');
       var safeDevice = JSON.stringify(d).replace(/'/g,"&​#39;");
       html += '<tr onclick=\'showDeviceDetail(' + safeDevice + ')\'>' +
-        '<td>'+(d.type||'-')+'</td>'+
-        '<td>'+(d.assetNo||'-')+'</td>'+
-        '<td>'+(d.serial||'-')+'</td>'+
-        '<td>'+(d.floor||'-')+'</td>'+
-        '<td>'+(d.room||'-')+'</td>'+
-        '<td>'+(seat||'-')+'</td>'+
-        '<td>'+(d.department||'-')+'</td>'+
+        '<td>'+(d.type||'-')+'</td><td>'+(d.assetNo||'-')+'</td><td>'+(d.serial||'-')+'</td>' +
+        '<td>'+(d.floor||'-')+'</td><td>'+(d.room||'-')+'</td><td>'+(seat||'-')+'</td><td>'+(d.department||'-')+'</td>' +
         '</tr>';
     });
     html += '</tbody></table></div>';
@@ -843,22 +806,19 @@
     var loadMoreBtn = document.createElement('button');
     loadMoreBtn.className = 'load-more-btn';
     loadMoreBtn.textContent = 'تحميل المزيد ⋮⋮⋮';
-    loadMoreBtn.onclick = function() {
+    loadMoreBtn.onclick = async function() {
       var floor = document.getElementById('filterFloor').value;
       var room = document.getElementById('filterRoom').value;
       loadMoreBtn.remove();
       
-      google.script.run
-        .withSuccessHandler(function(moreDevices) {
-          renderFilterDevices(moreDevices, false);
-        })
-        .getDevicesByFloorRoom(floor, room);
+      var moreDevices = await apiGet({ action: 'getDevicesByFloorRoom', floor: floor, room: room });
+      renderFilterDevices(moreDevices, false);
     };
     
     document.getElementById('filterDevicesList').appendChild(loadMoreBtn);
   }
 
-  function showDeviceDetail(device) {
+  async function showDeviceDetail(device) {
     showPage('deviceDetailPage');
     var seat = (device.seatNo||'') + (device.seatLetter||'');
     document.getElementById('deviceInfo').innerHTML =
@@ -873,7 +833,8 @@
       '<div class="detail-row"><span class="detail-label">آخر تحرك</span><span class="detail-value">'+(device.lastMoveDate||'-')+'</span></div>'+
       '<div class="detail-row"><span class="detail-label">بواسطة</span><span class="detail-value">'+(device.lastMoveUser||'-')+'</span></div>';
     document.getElementById('deviceHistory').innerHTML = '<div class="loading">جاري التحميل...</div>';
-    google.script.run.withSuccessHandler(renderHistory).getDeviceHistory(device.serial, device.assetNo);
+    var history = await apiGet({ action: 'getDeviceHistory', serial: device.serial||'', assetNo: device.assetNo||'' });
+    renderHistory(history);
   }
 
   function renderHistory(history) {

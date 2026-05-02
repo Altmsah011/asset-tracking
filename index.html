@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Permissions-Policy" content="camera=*, microphone=*">
+<meta http-equiv="Feature-Policy" content="camera *; microphone *">
 <title>Moving Team Al-Maadi</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a73e8">
@@ -17,7 +19,7 @@
   .header { background: #1a73e8; color: white; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .header h2 { font-size: 18px; }
   .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+  .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 12px; transition: 0.2s; }
   .btn-primary { background: #1a73e8; color: white; }
   .btn-success { background: #34a853; color: white; }
   .btn:active { opacity: 0.8; transform: scale(0.98); }
@@ -38,6 +40,7 @@
   .input-with-scan { display: flex; gap: 6px; align-items: center; }
   .input-with-scan input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: inherit; }
   .scan-btn { padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; white-space: nowrap; }
+  /* Login */
   .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a73e8, #0d47a1); }
   .login-card { background: white; border-radius: 16px; padding: 35px 30px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
   .login-brand { text-align: center; margin-bottom: 25px; }
@@ -45,6 +48,7 @@
   .brand-divider { height: 3px; background: linear-gradient(to right, transparent, #1a73e8, transparent); margin: 12px 0; border-radius: 2px; }
   .brand-sub { font-size: 11px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; direction: ltr; margin-bottom: 6px; }
   .brand-dev { font-size: 12px; color: #999; margin-top: 4px; }
+  /* Devices table */
   .devices-table-wrapper { overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .devices-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px; }
   .devices-table th { background: #1a73e8; color: white; padding: 10px 8px; text-align: right; font-weight: bold; white-space: nowrap; }
@@ -79,19 +83,22 @@
   #reader { width: 100%; border-radius: 10px; overflow: hidden; min-height: 250px; }
   .two-col { display: flex; gap: 10px; }
   .two-col .form-group { flex: 1; }
+  /* Recent devices section */
+  .recent-devices { margin-bottom: 20px; }
+  .recent-item { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; border-right: 3px solid #1a73e8; }
+  .recent-item p { font-size: 13px; margin-bottom: 3px; color: #555; }
+  .recent-item strong { color: #1a73e8; }
+  /* Infinite scroll */
+  .load-more-btn { width: 100%; padding: 12px; background: #f0f2f5; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; color: #666; }
+  .load-more-btn:hover { background: #e8f0fe; color: #1a73e8; }
 </style>
 </head>
 <body>
 
-<!-- الرابط الخاص بـ Apps Script - عدله بالرابط بتاعك -->
-<script>
-  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmM9fVyiTNA8Jp4uUz95oNd3ERMqhDSjQodXexlZIBM_FaPxVC9OxQRHN-eoRuuTiU0Q/exec';
-</script>
-
-<!-- QR/Barcode Modal -->
+<!-- Barcode/QR Modal -->
 <div id="qrModal">
   <div class="qr-box">
-    <div class="qr-title">📷 امسح الباركود أو QR</div>
+    <div class="qr-title">📷 امسح الباركود أو QR Code</div>
     <div id="reader"></div>
     <div id="qrStatus">وجه الكاميرا نحو الباركود</div>
     <button class="qr-close" onclick="closeQR()">✖ إغلاق</button>
@@ -158,6 +165,10 @@
       </div>
     </div>
     <div class="form-group">
+      <label>رقم التيكت (اختياري)</label>
+      <input type="text" id="ticketNo" placeholder="أرقام فقط" pattern="[0-9]*">
+    </div>
+    <div class="form-group">
       <label>نوع الجهاز</label>
       <div class="combo-wrapper">
         <div class="combo-input-row">
@@ -197,7 +208,14 @@
     </div>
     <div class="form-group">
       <label>الصالة أو الغرفة</label>
-      <select id="fromRoom"><option value="">-- اختر الدور أولاً --</option></select>
+      <div class="combo-wrapper">
+        <div class="combo-input-row">
+          <input type="text" id="fromRoomInput" placeholder="اكتب أو اختر" autocomplete="off" oninput="filterRoomCombo('fromRoomDropdown', this.value)" onfocus="openRoomCombo('fromRoomDropdown')">
+          <button class="arr-btn" onclick="toggleRoomCombo('fromRoomDropdown')">▼</button>
+          <button class="add-btn" onclick="addRoomToCombo('fromRoomDropdown', 'fromRoomInput')" title="إضافة جديد">+</button>
+        </div>
+        <div class="combo-dropdown" id="fromRoomDropdown"></div>
+      </div>
     </div>
     <div class="two-col">
       <div class="form-group">
@@ -227,7 +245,14 @@
     </div>
     <div class="form-group">
       <label>الصالة أو الغرفة</label>
-      <select id="toRoom"><option value="">-- اختر الدور أولاً --</option></select>
+      <div class="combo-wrapper">
+        <div class="combo-input-row">
+          <input type="text" id="toRoomInput" placeholder="اكتب أو اختر" autocomplete="off" oninput="filterRoomCombo('toRoomDropdown', this.value)" onfocus="openRoomCombo('toRoomDropdown')">
+          <button class="arr-btn" onclick="toggleRoomCombo('toRoomDropdown')">▼</button>
+          <button class="add-btn" onclick="addRoomToCombo('toRoomDropdown', 'toRoomInput')" title="إضافة جديد">+</button>
+        </div>
+        <div class="combo-dropdown" id="toRoomDropdown"></div>
+      </div>
     </div>
     <div class="two-col">
       <div class="form-group">
@@ -251,13 +276,54 @@
   <button class="btn btn-primary" onclick="submitMovement()">💾 حفظ الحركة</button>
 </div>
 
-<!-- صفحة الأجهزة -->
+<!-- صفحة الأجهزة (معدلة) -->
 <div id="devicesPage" class="page">
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="بحث بالسيريال أو رقم الأصل...">
     <button onclick="searchDevices()">🔍</button>
   </div>
+  
+  <!-- آخر 10 عمليات تحرك -->
+  <div class="card recent-devices">
+    <div class="section-title">آخر 10 عمليات تحرك</div>
+    <div id="recentDevicesList"><div class="loading">جاري التحميل...</div></div>
+  </div>
+  
+  <button class="btn btn-primary" onclick="showPage('filterDevicesPage')">🔍 عرض حسب الدور والغرفة</button>
+  
+  <!-- الجدول العادي للأجهزة -->
   <div id="devicesList"><div class="loading">جاري التحميل...</div></div>
+</div>
+
+<!-- صفحة فلترة الأجهزة (جديدة) -->
+<div id="filterDevicesPage" class="page">
+  <div class="card">
+    <div class="section-title">فلترة حسب الموقع</div>
+    <div class="form-group">
+      <label>الدور</label>
+      <select id="filterFloor" onchange="updateFilterRooms()">
+        <option value="">-- اختر الدور --</option>
+        <option value="Basement">Basement</option>
+        <option value="Ground">Ground</option>
+        <option value="First">First</option>
+        <option value="Second">Second</option>
+        <option value="Third">Third</option>
+        <option value="Fourth">Fourth</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>الصالة أو الغرفة (اختياري)</label>
+      <select id="filterRoom">
+        <option value="">-- اختر الدور أولاً --</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="filterByFloorRoom()">عرض النتائج</button>
+  </div>
+  
+  <div id="filterResults">
+    <div class="section-title">نتائج البحث</div>
+    <div id="filterDevicesList"><div class="loading">اختر الدور واضغط عرض النتائج</div></div>
+  </div>
 </div>
 
 <!-- صفحة تفاصيل جهاز -->
@@ -269,41 +335,23 @@
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-  var currentUser = null;
-  var pageHistory = [];
-  var currentScanField = null;
-  var html5QrCode = null;
-  var settingsData = { departments: [], types: [] };
-  var lookupTimeout = null;
+  let currentUser = null;
+  let pageHistory = [];
+  let currentScanField = null;
+  let html5QrCode = null;
+  let settingsData = { departments: [], types: [] };
+  let lookupTimeout = null;
+  let filterOffset = 0;
+  let filterLimit = 20;
 
-  // ===== Service Worker =====
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-
-  // ===== API =====
-  async function apiGet(params) {
-    var url = APPS_SCRIPT_URL + '?' + Object.keys(params).map(function(k) {
-      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-    }).join('&');
-    var res = await fetch(url);
-    return await res.json();
-  }
-
-  async function apiPost(data) {
-    var res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return await res.json();
-  }
-
-  // ===== الأدوار والغرف =====
+  // ===== بناء الغرف حسب الدور =====
   var floorPrefix = { Basement:'B', Ground:'G', First:'F', Second:'S', Third:'T', Fourth:'FR' };
 
   function generateRooms(prefix) {
     var rooms = [];
-    for (var i = 1; i <= 80; i++) rooms.push(prefix + (i < 10 ? '0'+i : i));
+    for (var i = 1; i <= 80; i++) {
+      rooms.push(prefix + (i < 10 ? '0'+i : i));
+    }
     return rooms;
   }
 
@@ -311,17 +359,41 @@
     var floor = document.getElementById(floorId).value;
     var roomSel = document.getElementById(roomId);
     roomSel.innerHTML = '';
-    if (!floor) { roomSel.innerHTML = '<option value="">-- اختر الدور أولاً --</option>'; return; }
+    if (!floor) {
+      roomSel.innerHTML = '<option value="">-- اختر الدور أولاً --</option>';
+      return;
+    }
+    var prefix = floorPrefix[floor];
     var opt0 = document.createElement('option');
     opt0.value = ''; opt0.textContent = '-- اختر الصالة/الغرفة --';
     roomSel.appendChild(opt0);
-    generateRooms(floorPrefix[floor]).forEach(function(r) {
+    generateRooms(prefix).forEach(function(r) {
       var opt = document.createElement('option');
       opt.value = r; opt.textContent = r;
       roomSel.appendChild(opt);
     });
   }
 
+  function updateFilterRooms() {
+    var floor = document.getElementById('filterFloor').value;
+    var roomSel = document.getElementById('filterRoom');
+    roomSel.innerHTML = '';
+    if (!floor) {
+      roomSel.innerHTML = '<option value="">-- اختر الدور أولاً --</option>';
+      return;
+    }
+    var prefix = floorPrefix[floor];
+    var opt0 = document.createElement('option');
+    opt0.value = ''; opt0.textContent = '-- كل الغرف --';
+    roomSel.appendChild(opt0);
+    generateRooms(prefix).forEach(function(r) {
+      var opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      roomSel.appendChild(opt);
+    });
+  }
+
+  // ===== تهيئة قوائم السيت =====
   function initSeatSelects() {
     ['fromSeatNo','toSeatNo'].forEach(function(id) {
       var sel = document.getElementById(id);
@@ -351,8 +423,12 @@
     document.getElementById('qrModal').classList.add('open');
     document.getElementById('qrStatus').textContent = 'جاري تشغيل الكاميرا...';
     document.getElementById('reader').innerHTML = '';
+
     setTimeout(function() {
-      if (html5QrCode) { html5QrCode.stop().catch(function(){}); html5QrCode = null; }
+      if (html5QrCode) {
+        html5QrCode.stop().catch(function(){});
+        html5QrCode = null;
+      }
       html5QrCode = new Html5Qrcode("reader");
       Html5Qrcode.getCameras().then(function(cameras) {
         if (!cameras || cameras.length === 0) {
@@ -394,32 +470,38 @@
   }
 
   function closeQR() {
-    if (html5QrCode) { html5QrCode.stop().catch(function(){}); html5QrCode = null; }
+    if (html5QrCode) {
+      html5QrCode.stop().catch(function(){});
+      html5QrCode = null;
+    }
     document.getElementById('qrModal').classList.remove('open');
     document.getElementById('reader').innerHTML = '';
   }
 
-  // ===== البحث التلقائي =====
+  // ===== البحث التلقائي عن الجهاز =====
   function lookupDevice() {
     clearTimeout(lookupTimeout);
-    lookupTimeout = setTimeout(async function() {
+    lookupTimeout = setTimeout(function() {
       var serial = document.getElementById('serial').value.trim();
       var assetNo = document.getElementById('assetNo').value.trim();
       if (!serial && !assetNo) return;
-      var device = await apiGet({ action: 'findDevice', serial: serial, assetNo: assetNo });
-      if (device && !device.error) {
-        document.getElementById('typeInput').value = device.type || '';
-        document.getElementById('deptInput').value = device.department || '';
-        if (device.floor) {
-          document.getElementById('fromFloor').value = device.floor;
-          updateRooms('fromFloor', 'fromRoom');
-          setTimeout(function() {
-            document.getElementById('fromRoom').value = device.room || '';
-          }, 50);
-        }
-        document.getElementById('fromSeatNo').value = device.seatNo || '';
-        document.getElementById('fromSeatLetter').value = device.seatLetter || '';
-      }
+      google.script.run
+        .withSuccessHandler(function(device) {
+          if (device) {
+            document.getElementById('typeInput').value = device.type || '';
+            document.getElementById('deptInput').value = device.department || '';
+            if (device.floor) {
+              document.getElementById('fromFloor').value = device.floor;
+              updateRooms('fromFloor', 'fromRoom');
+              setTimeout(function() {
+                document.getElementById('fromRoom').value = device.room || '';
+              }, 50);
+            }
+            document.getElementById('fromSeatNo').value = device.seatNo || '';
+            document.getElementById('fromSeatLetter').value = device.seatLetter || '';
+          }
+        })
+        .findDevice(serial, assetNo);
     }, 600);
   }
 
@@ -441,15 +523,18 @@
   function fillCombo(dropdownId, inputId, items) {
     var dropdown = document.getElementById(dropdownId);
     dropdown.innerHTML = '';
-    (items || []).forEach(function(item) {
+    items.forEach(function(item) {
       var div = document.createElement('div');
       div.className = 'combo-option';
       div.textContent = item;
-      div.onclick = function() { document.getElementById(inputId).value = item; dropdown.classList.remove('open'); };
+      div.onclick = function() {
+        document.getElementById(inputId).value = item;
+        dropdown.classList.remove('open');
+      };
       dropdown.appendChild(div);
     });
   }
-  async function addToCombo(dropdownId, inputId, settingsKey) {
+  function addToCombo(dropdownId, inputId, settingsKey) {
     var val = document.getElementById(inputId).value.trim();
     if (!val) { alert('من فضلك اكتب القيمة أولاً ثم اضغط +'); return; }
     if (settingsData[settingsKey] && settingsData[settingsKey].includes(val)) { alert('هذه القيمة موجودة بالفعل'); return; }
@@ -457,9 +542,43 @@
     settingsData[settingsKey].push(val);
     var inputMap = { 'typeDropdown':'typeInput', 'deptDropdown':'deptInput' };
     fillCombo(dropdownId, inputMap[dropdownId], settingsData[settingsKey]);
-    await apiPost({ action: 'addToSettings', key: settingsKey, value: val });
+    google.script.run.addToSettings(settingsKey, val);
     document.getElementById(dropdownId).classList.remove('open');
   }
+
+  // ===== قوائم الغرف (Combo Box) =====
+  function openRoomCombo(dropdownId) {
+    document.querySelectorAll('.combo-dropdown').forEach(function(d) {
+      if (d.id !== dropdownId) d.classList.remove('open');
+    });
+    document.getElementById(dropdownId).classList.add('open');
+  }
+  function toggleRoomCombo(dropdownId) { document.getElementById(dropdownId).classList.toggle('open'); }
+  function filterRoomCombo(dropdownId, val) {
+    var dropdown = document.getElementById(dropdownId);
+    dropdown.classList.add('open');
+    dropdown.querySelectorAll('.combo-option').forEach(function(opt) {
+      opt.style.display = opt.textContent.toLowerCase().includes(val.toLowerCase()) ? 'block' : 'none';
+    });
+  }
+  function addRoomToCombo(dropdownId, inputId) {
+    var val = document.getElementById(inputId).value.trim();
+    if (!val) { alert('من فضلك اكتب القيمة أولاً ثم اضغط +'); return; }
+    var dropdown = document.getElementById(dropdownId);
+    var existingOptions = Array.from(dropdown.querySelectorAll('.combo-option')).map(opt => opt.textContent);
+    if (existingOptions.includes(val)) { alert('هذه القيمة موجودة بالفعل'); return; }
+    
+    var div = document.createElement('div');
+    div.className = 'combo-option';
+    div.textContent = val;
+    div.onclick = function() {
+      document.getElementById(inputId).value = val;
+      dropdown.classList.remove('open');
+    };
+    dropdown.appendChild(div);
+    document.getElementById(dropdownId).classList.remove('open');
+  }
+
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.combo-wrapper')) {
       document.querySelectorAll('.combo-dropdown').forEach(function(d) { d.classList.remove('open'); });
@@ -478,7 +597,12 @@
       pageHistory.push(pageId);
       document.getElementById('backBtn').style.display = 'block';
     }
-    var titles = { addMovementPage:'تسجيل حركة نقل', devicesPage:'الأجهزة', deviceDetailPage:'تفاصيل الجهاز' };
+    var titles = { 
+      addMovementPage:'تسجيل حركة نقل', 
+      devicesPage:'الأجهزة', 
+      deviceDetailPage:'تفاصيل الجهاز',
+      filterDevicesPage:'فلترة الأجهزة'
+    };
     if (titles[pageId]) document.getElementById('headerTitle').textContent = titles[pageId];
     window.scrollTo(0,0);
   }
@@ -491,7 +615,7 @@
   }
 
   // ===== اللوجين =====
-  async function handleLogin() {
+  function handleLogin() {
     var email = document.getElementById('loginEmail').value.trim();
     var password = document.getElementById('loginPassword').value.trim();
     if (!email || !password) {
@@ -499,21 +623,23 @@
       return;
     }
     document.getElementById('loginAlert').innerHTML = '<div class="alert alert-info">جاري التحقق...</div>';
-    var result = await apiGet({ action: 'login', email: email, password: password });
-    if (result.success) {
-      currentUser = result;
-      currentUser.email = email;
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('mainHeader').style.display = 'block';
-      document.getElementById('userName').textContent = email.split('@')[0];
-      document.getElementById('userRole').textContent = result.role;
-      loadSettings();
-      showPage('homePage');
-    } else {
-      document.getElementById('loginAlert').innerHTML = '<div class="alert alert-error">' + (result.message || 'خطأ في تسجيل الدخول') + '</div>';
-    }
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          currentUser = result;
+          currentUser.email = email;
+          document.getElementById('loginPage').style.display = 'none';
+          document.getElementById('mainHeader').style.display = 'block';
+          document.getElementById('userName').textContent = email.split('@')[0];
+          document.getElementById('userRole').textContent = result.role;
+          loadSettings();
+          showPage('homePage');
+        } else {
+          document.getElementById('loginAlert').innerHTML = '<div class="alert alert-error">' + result.message + '</div>';
+        }
+      })
+      .login(email, password);
   }
-
   function handleLogout() {
     closeQR();
     currentUser = null;
@@ -525,15 +651,18 @@
   }
 
   // ===== الإعدادات =====
-  async function loadSettings() {
-    var settings = await apiGet({ action: 'getSettings' });
-    settingsData = settings;
-    fillCombo('typeDropdown', 'typeInput', settings.types);
-    fillCombo('deptDropdown', 'deptInput', settings.departments);
+  function loadSettings() {
+    google.script.run
+      .withSuccessHandler(function(settings) {
+        settingsData = settings;
+        fillCombo('typeDropdown', 'typeInput', settings.types || []);
+        fillCombo('deptDropdown', 'deptInput', settings.departments || []);
+      })
+      .getSettings();
   }
 
   // ===== تسجيل حركة =====
-  async function submitMovement() {
+  function submitMovement() {
     var serial = document.getElementById('serial').value.trim();
     var assetNo = document.getElementById('assetNo').value.trim();
     if (!serial && !assetNo) {
@@ -541,50 +670,58 @@
       return;
     }
     var data = {
-      action: 'addMovement',
       user: currentUser.email,
       serial: serial,
       assetNo: assetNo,
       type: document.getElementById('typeInput').value.trim(),
       department: document.getElementById('deptInput').value.trim(),
       fromFloor: document.getElementById('fromFloor').value,
-      from: document.getElementById('fromRoom').value,
+      from: document.getElementById('fromRoomInput').value.trim() || document.getElementById('fromRoom').value,
       fromSeatNo: document.getElementById('fromSeatNo').value,
       fromSeatLetter: document.getElementById('fromSeatLetter').value,
       floor: document.getElementById('toFloor').value,
-      to: document.getElementById('toRoom').value,
+      to: document.getElementById('toRoomInput').value.trim() || document.getElementById('toRoom').value,
       toSeatNo: document.getElementById('toSeatNo').value,
       toSeatLetter: document.getElementById('toSeatLetter').value,
-      notes: document.getElementById('notes').value.trim()
+      notes: document.getElementById('notes').value.trim(),
+      ticketNo: document.getElementById('ticketNo').value.trim()
     };
     document.getElementById('movementAlert').innerHTML = '<div class="alert alert-info">جاري الحفظ...</div>';
-    var result = await apiPost(data);
-    if (result.success) {
-      document.getElementById('movementAlert').innerHTML = '<div class="alert alert-success">✅ ' + result.message + '</div>';
-      document.getElementById('serial').value = '';
-      document.getElementById('assetNo').value = '';
-      setTimeout(function() { document.getElementById('movementAlert').innerHTML = ''; }, 2000);
-    } else {
-      document.getElementById('movementAlert').innerHTML = '<div class="alert alert-error">حدث خطأ، حاول مرة أخرى</div>';
-    }
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          document.getElementById('movementAlert').innerHTML = '<div class="alert alert-success">✅ ' + result.message + '</div>';
+          // مسح السيريال ورقم الأصل فقط - الباقي يفضل زي ما هو
+          document.getElementById('serial').value = '';
+          document.getElementById('assetNo').value = '';
+          document.getElementById('ticketNo').value = '';
+          setTimeout(function() {
+            document.getElementById('movementAlert').innerHTML = '';
+          }, 2000);
+        } else {
+          document.getElementById('movementAlert').innerHTML = '<div class="alert alert-error">حدث خطأ، حاول مرة أخرى</div>';
+        }
+      })
+      .addMovement(data);
   }
 
-  // ===== عرض الأجهزة =====
-  async function loadDevices() {
+  // ===== عرض الأجهزة (جدول) =====
+  function loadDevices() {
     showPage('devicesPage');
     document.getElementById('searchInput').value = '';
     document.getElementById('devicesList').innerHTML = '<div class="loading">جاري التحميل...</div>';
-    var devices = await apiGet({ action: 'getDevices', search: '' });
-    renderDevices(devices);
+    google.script.run.withSuccessHandler(renderDevices).getDevices('');
+    
+    // تحميل آخر 10 عمليات تحرك
+    loadRecentDevices();
   }
-
-  async function searchDevices() {
+  
+  function searchDevices() {
     var search = document.getElementById('searchInput').value.trim();
     document.getElementById('devicesList').innerHTML = '<div class="loading">جاري البحث...</div>';
-    var devices = await apiGet({ action: 'getDevices', search: search });
-    renderDevices(devices);
+    google.script.run.withSuccessHandler(renderDevices).getDevices(search);
   }
-
+  
   function renderDevices(devices) {
     if (!devices || devices.length === 0) {
       document.getElementById('devicesList').innerHTML = '<div class="loading">لا توجد أجهزة</div>';
@@ -595,17 +732,133 @@
       '</tr></thead><tbody>';
     devices.forEach(function(d) {
       var seat = (d.seatNo||'') + (d.seatLetter||'');
-      var safeDevice = JSON.stringify(d).replace(/'/g,"&#39;");
+      var safeDevice = JSON.stringify(d).replace(/'/g,"&​#39;");
       html += '<tr onclick=\'showDeviceDetail(' + safeDevice + ')\'>' +
-        '<td>'+(d.type||'-')+'</td><td>'+(d.assetNo||'-')+'</td><td>'+(d.serial||'-')+'</td>' +
-        '<td>'+(d.floor||'-')+'</td><td>'+(d.room||'-')+'</td><td>'+(seat||'-')+'</td><td>'+(d.department||'-')+'</td>' +
+        '<td>'+(d.type||'-')+'</td>'+
+        '<td>'+(d.assetNo||'-')+'</td>'+
+        '<td>'+(d.serial||'-')+'</td>'+
+        '<td>'+(d.floor||'-')+'</td>'+
+        '<td>'+(d.room||'-')+'</td>'+
+        '<td>'+(seat||'-')+'</td>'+
+        '<td>'+(d.department||'-')+'</td>'+
         '</tr>';
     });
     html += '</tbody></table></div>';
     document.getElementById('devicesList').innerHTML = html;
   }
 
-  async function showDeviceDetail(device) {
+  // ===== تحميل آخر 10 عمليات تحرك (جديد) =====
+  function loadRecentDevices() {
+    document.getElementById('recentDevicesList').innerHTML = '<div class="loading">جاري التحميل...</div>';
+    google.script.run
+      .withSuccessHandler(function(recentDevices) {
+        renderRecentDevices(recentDevices);
+      })
+      .getRecentDevices();
+  }
+
+  function renderRecentDevices(recentDevices) {
+    if (!recentDevices || recentDevices.length === 0) {
+      document.getElementById('recentDevicesList').innerHTML = '<div class="loading">لا توجد عمليات حركة</div>';
+      return;
+    }
+    
+    var html = '';
+    recentDevices.forEach(function(device) {
+      var fromSeat = (device.fromSeatNo||'') + (device.fromSeatLetter||'');
+      var toSeat = (device.toSeatNo||'') + (device.toSeatLetter||'');
+      html += '<div class="recent-item">' +
+        '<p><strong>📅 ' + device.date + ' - ' + device.time + '</strong></p>' +
+        '<p>👤 ' + device.user + '</p>' +
+        '<p>🔄 ' + (device.type||'-') + ' | ' + (device.assetNo||'-') + ' | ' + (device.serial||'-') + '</p>' +
+        '<p>📤 من: ' + (device.from||'-') + (fromSeat?' | السيت: '+fromSeat:'') + '</p>' +
+        '<p>📥 إلى: ' + (device.to||'-') + (toSeat?' | السيت: '+toSeat:'') + '</p>' +
+        (device.notes?'<p>📝 '+device.notes+'</p>':'') +
+        '</div>';
+    });
+    document.getElementById('recentDevicesList').innerHTML = html;
+  }
+
+  // ===== فلترة حسب الدور والغرفة (جديد) =====
+  function filterByFloorRoom() {
+    var floor = document.getElementById('filterFloor').value;
+    var room = document.getElementById('filterRoom').value;
+    
+    if (!floor) {
+      alert('من فضلك اختر الدور');
+      return;
+    }
+    
+    filterOffset = 0;
+    document.getElementById('filterDevicesList').innerHTML = '<div class="loading">جاري التحميل...</div>';
+    
+    google.script.run
+      .withSuccessHandler(function(devices) {
+        renderFilterDevices(devices, true);
+      })
+      .getDevicesByFloorRoom(floor, room);
+  }
+
+  function renderFilterDevices(devices, isFirstLoad = false) {
+    if (isFirstLoad) {
+      filterOffset = 0;
+      if (!devices || devices.length === 0) {
+        document.getElementById('filterDevicesList').innerHTML = '<div class="loading">لا توجد أجهزة مطابقة</div>';
+        return;
+      }
+    }
+    
+    if (!devices || devices.length === 0) {
+      document.getElementById('filterDevicesList').innerHTML += '<div class="loading">لا توجد أجهزة إضافية</div>';
+      return;
+    }
+    
+    var html = '<div class="devices-table-wrapper"><table class="devices-table"><thead><tr>' +
+      '<th>النوع</th><th>رقم الأصل</th><th>السيريال</th><th>الدور</th><th>الصالة/الغرفة</th><th>السيت</th><th>الإدارة</th>' +
+      '</tr></thead><tbody>';
+    devices.forEach(function(d) {
+      var seat = (d.seatNo||'') + (d.seatLetter||'');
+      var safeDevice = JSON.stringify(d).replace(/'/g,"&​#39;");
+      html += '<tr onclick=\'showDeviceDetail(' + safeDevice + ')\'>' +
+        '<td>'+(d.type||'-')+'</td>'+
+        '<td>'+(d.assetNo||'-')+'</td>'+
+        '<td>'+(d.serial||'-')+'</td>'+
+        '<td>'+(d.floor||'-')+'</td>'+
+        '<td>'+(d.room||'-')+'</td>'+
+        '<td>'+(seat||'-')+'</td>'+
+        '<td>'+(d.department||'-')+'</td>'+
+        '</tr>';
+    });
+    html += '</tbody></table></div>';
+    
+    if (isFirstLoad) {
+      document.getElementById('filterDevicesList').innerHTML = html;
+    } else {
+      document.getElementById('filterDevicesList').innerHTML += html;
+    }
+    
+    filterOffset += devices.length;
+    
+    // زر تحميل المزيد (Infinite Scroll)
+    var loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'load-more-btn';
+    loadMoreBtn.textContent = 'تحميل المزيد ⋮⋮⋮';
+    loadMoreBtn.onclick = function() {
+      var floor = document.getElementById('filterFloor').value;
+      var room = document.getElementById('filterRoom').value;
+      loadMoreBtn.remove();
+      
+      google.script.run
+        .withSuccessHandler(function(moreDevices) {
+          renderFilterDevices(moreDevices, false);
+        })
+        .getDevicesByFloorRoom(floor, room);
+    };
+    
+    document.getElementById('filterDevicesList').appendChild(loadMoreBtn);
+  }
+
+  function showDeviceDetail(device) {
     showPage('deviceDetailPage');
     var seat = (device.seatNo||'') + (device.seatLetter||'');
     document.getElementById('deviceInfo').innerHTML =
@@ -620,8 +873,7 @@
       '<div class="detail-row"><span class="detail-label">آخر تحرك</span><span class="detail-value">'+(device.lastMoveDate||'-')+'</span></div>'+
       '<div class="detail-row"><span class="detail-label">بواسطة</span><span class="detail-value">'+(device.lastMoveUser||'-')+'</span></div>';
     document.getElementById('deviceHistory').innerHTML = '<div class="loading">جاري التحميل...</div>';
-    var history = await apiGet({ action: 'getDeviceHistory', serial: device.serial||'', assetNo: device.assetNo||'' });
-    renderHistory(history);
+    google.script.run.withSuccessHandler(renderHistory).getDeviceHistory(device.serial, device.assetNo);
   }
 
   function renderHistory(history) {

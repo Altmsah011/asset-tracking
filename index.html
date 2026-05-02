@@ -39,20 +39,13 @@
   .brand-divider { height: 3px; background: linear-gradient(to right, transparent, #1a73e8, transparent); margin: 12px 0; border-radius: 2px; }
   .brand-sub { font-size: 11px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; direction: ltr; margin-bottom: 6px; }
   .brand-dev { font-size: 12px; color: #999; margin-top: 4px; }
-  /* Devices table - تحسين العرض */
+  /* Devices table */
   .devices-table-wrapper { overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .devices-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 800px; }
-  .devices-table th { background: #1a73e8; color: white; padding: 12px 10px; text-align: right; font-weight: bold; white-space: nowrap; }
-  .devices-table td { padding: 10px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  .devices-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px; }
+  .devices-table th { background: #1a73e8; color: white; padding: 10px 8px; text-align: right; font-weight: bold; white-space: nowrap; }
+  .devices-table td { padding: 9px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
   .devices-table tr:hover td { background: #f0f7ff; cursor: pointer; }
   .devices-table tr:last-child td { border-bottom: none; }
-  /* Recent devices table - جدول أفقي */
-  .recent-table-wrapper { overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .recent-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }
-  .recent-table th { background: #1a73e8; color: white; padding: 8px 6px; text-align: right; font-weight: bold; white-space: nowrap; }
-  .recent-table td { padding: 6px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
-  .recent-table tr:hover td { background: #f0f7ff; }
-  .recent-table tr:last-child td { border-bottom: none; }
   .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
   .badge-blue { background: #e8f0fe; color: #1a73e8; }
   .history-item { border-right: 3px solid #34a853; padding: 10px 15px; margin-bottom: 8px; background: #f8f9fa; border-radius: 0 8px 8px 0; }
@@ -81,13 +74,11 @@
   #reader { width: 100%; border-radius: 10px; overflow: hidden; min-height: 250px; }
   .two-col { display: flex; gap: 10px; }
   .two-col .form-group { flex: 1; }
-  /* Infinite scroll */
-  .infinite-scroll-container { height: 400px; overflow-y: auto; }
 </style>
 </head>
 <body>
 
-<!-- الرابط الخاص بـ Apps Script (محدث) -->
+<!-- الرابط الخاص بـ Apps Script -->
 <script>
   var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzcUTg49s4F9HZwIY8Ox5DVbYuY7caZin8FNNwS0y6ULLiGpQNkgNfqETYhVVcuKeMY-Q/exec';
 </script>
@@ -143,7 +134,7 @@
   <button class="btn btn-success" onclick="loadDevices()">📋 عرض الأجهزة</button>
 </div>
 
-<!-- صفحة تسجيل حركة (معدل) -->
+<!-- صفحة تسجيل حركة -->
 <div id="addMovementPage" class="page">
   <div class="card">
     <div class="section-title">بيانات الجهاز</div>
@@ -241,10 +232,6 @@
 
   <div class="card">
     <div class="form-group">
-      <label>رقم التيكت</label>
-      <input type="text" id="ticketNo" placeholder="أرقام فقط" pattern="[0-9]*">
-    </div>
-    <div class="form-group">
       <label>ملاحظات (اختياري)</label>
       <textarea id="notes" placeholder="أي ملاحظات إضافية..."></textarea>
     </div>
@@ -253,76 +240,13 @@
   <button class="btn btn-primary" onclick="submitMovement()">💾 حفظ الحركة</button>
 </div>
 
-<!-- صفحة الأجهزة (معدلة) -->
+<!-- صفحة الأجهزة -->
 <div id="devicesPage" class="page">
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="بحث بالسيريال أو رقم الأصل...">
     <button onclick="searchDevices()">🔍</button>
   </div>
-  
-  <!-- آخر 10 عمليات تحرك - جدول أفقي -->
-  <div class="card">
-    <div class="section-title">آخر 10 عمليات تحرك</div>
-    <div class="recent-table-wrapper">
-      <table class="recent-table" id="recentDevicesTable">
-        <thead>
-          <tr>
-            <th>المستخدم</th>
-            <th>التاريخ</th>
-            <th>الوقت</th>
-            <th>نوع الجهاز</th>
-            <th>رقم الأصل</th>
-            <th>السيريال</th>
-            <th>من</th>
-            <th>إلى</th>
-            <th>رقم التيكت</th>
-            <th>ملاحظات</th>
-          </tr>
-        </thead>
-        <tbody id="recentDevicesList">
-          <tr><td colspan="10" class="loading">جاري التحميل...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  
-  <button class="btn btn-primary" onclick="showPage('filterDevicesPage')">🔍 عرض حسب الدور والغرفة</button>
-  
-  <!-- الجدول العادي للأجهزة -->
   <div id="devicesList"><div class="loading">جاري التحميل...</div></div>
-</div>
-
-<!-- صفحة فلترة الأجهزة (معدلة) -->
-<div id="filterDevicesPage" class="page">
-  <div class="card">
-    <div class="section-title">فلترة حسب الموقع</div>
-    <div class="form-group">
-      <label>الدور</label>
-      <select id="filterFloor" onchange="updateFilterRooms()">
-        <option value="">-- اختر الدور --</option>
-        <option value="Basement">Basement</option>
-        <option value="Ground">Ground</option>
-        <option value="First">First</option>
-        <option value="Second">Second</option>
-        <option value="Third">Third</option>
-        <option value="Fourth">Fourth</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>الصالة أو الغرفة (اختياري)</label>
-      <select id="filterRoom">
-        <option value="">-- اختر الدور أولاً --</option>
-      </select>
-    </div>
-    <button class="btn btn-primary" onclick="filterByFloorRoom()">عرض النتائج</button>
-  </div>
-  
-  <div id="filterResults">
-    <div class="section-title">نتائج البحث</div>
-    <div class="infinite-scroll-container" id="filterDevicesList">
-      <div class="loading">اختر الدور واضغط عرض النتائج</div>
-    </div>
-  </div>
 </div>
 
 <!-- صفحة تفاصيل جهاز -->
@@ -340,9 +264,6 @@
   let html5QrCode = null;
   let settingsData = { departments: [], types: [] };
   let lookupTimeout = null;
-  let filterOffset = 0;
-  let filterLimit = 20;
-  let isLoadingMore = false;
 
   // ===== Service Worker =====
   if ('serviceWorker' in navigator) {
@@ -371,7 +292,7 @@
 
   function generateRooms(prefix) {
     var rooms = [];
-    for (var i = 1; i <= 99; i++) {
+    for (var i = 1; i <= 80; i++) {
       rooms.push(prefix + (i < 10 ? '0'+i : i));
     }
     return rooms;
@@ -388,25 +309,6 @@
     var prefix = floorPrefix[floor];
     var opt0 = document.createElement('option');
     opt0.value = ''; opt0.textContent = '-- اختر الصالة/الغرفة --';
-    roomSel.appendChild(opt0);
-    generateRooms(prefix).forEach(function(r) {
-      var opt = document.createElement('option');
-      opt.value = r; opt.textContent = r;
-      roomSel.appendChild(opt);
-    });
-  }
-
-  function updateFilterRooms() {
-    var floor = document.getElementById('filterFloor').value;
-    var roomSel = document.getElementById('filterRoom');
-    roomSel.innerHTML = '';
-    if (!floor) {
-      roomSel.innerHTML = '<option value="">-- اختر الدور أولاً --</option>';
-      return;
-    }
-    var prefix = floorPrefix[floor];
-    var opt0 = document.createElement('option');
-    opt0.value = ''; opt0.textContent = '-- كل الغرف --';
     roomSel.appendChild(opt0);
     generateRooms(prefix).forEach(function(r) {
       var opt = document.createElement('option');
@@ -500,14 +402,13 @@
     document.getElementById('reader').innerHTML = '';
   }
 
-  // ===== البحث التلقائي عن الجهاز (معدل) =====
+  // ===== البحث التلقائي عن الجهاز =====
   function lookupDevice() {
     clearTimeout(lookupTimeout);
     lookupTimeout = setTimeout(async function() {
       var serial = document.getElementById('serial').value.trim();
       var assetNo = document.getElementById('assetNo').value.trim();
       if (!serial && !assetNo) return;
-      
       var device = await apiGet({ action: 'findDevice', serial: serial, assetNo: assetNo });
       if (device && !device.error) {
         document.getElementById('typeInput').value = device.type || '';
@@ -540,8 +441,7 @@
     var titles = { 
       addMovementPage:'تسجيل حركة نقل', 
       devicesPage:'الأجهزة', 
-      deviceDetailPage:'تفاصيل الجهاز',
-      filterDevicesPage:'فلترة الأجهزة'
+      deviceDetailPage:'تفاصيل الجهاز'
     };
     if (titles[pageId]) document.getElementById('headerTitle').textContent = titles[pageId];
     window.scrollTo(0,0);
@@ -612,7 +512,7 @@
     });
   }
 
-  // ===== تسجيل حركة (معدل) =====
+  // ===== تسجيل حركة =====
   async function submitMovement() {
     var serial = document.getElementById('serial').value.trim();
     var assetNo = document.getElementById('assetNo').value.trim();
@@ -635,7 +535,6 @@
       to: document.getElementById('toRoom').value,
       toSeatNo: document.getElementById('toSeatNo').value,
       toSeatLetter: document.getElementById('toSeatLetter').value,
-      ticketNo: document.getElementById('ticketNo').value.trim(),
       notes: document.getElementById('notes').value.trim()
     };
     document.getElementById('movementAlert').innerHTML = '<div class="alert alert-info">جاري الحفظ...</div>';
@@ -645,7 +544,6 @@
       // مسح السيريال ورقم الأصل فقط - الباقي يفضل زي ما هو
       document.getElementById('serial').value = '';
       document.getElementById('assetNo').value = '';
-      document.getElementById('ticketNo').value = '';
       setTimeout(function() { document.getElementById('movementAlert').innerHTML = ''; }, 2000);
     } else {
       document.getElementById('movementAlert').innerHTML = '<div class="alert alert-error">حدث خطأ، حاول مرة أخرى</div>';
@@ -659,9 +557,6 @@
     document.getElementById('devicesList').innerHTML = '<div class="loading">جاري التحميل...</div>';
     var devices = await apiGet({ action: 'getDevices', search: '' });
     renderDevices(devices);
-    
-    // تحميل آخر 10 عمليات تحرك
-    loadRecentDevices();
   }
   
   async function searchDevices() {
@@ -677,126 +572,23 @@
       return;
     }
     var html = '<div class="devices-table-wrapper"><table class="devices-table"><thead><tr>' +
-      '<th>النوع</th><th>رقم الأصل</th><th>السيريال</th><th>الدور</th><th>الصالة/الغرفة</th><th>السيت</th><th>الإدارة</th><th>آخر تحرك</th><th>بواسطة</th>' +
+      '<th>النوع</th><th>رقم الأصل</th><th>السيريال</th><th>الدور</th><th>الصالة/الغرفة</th><th>السيت</th><th>الإدارة</th>' +
       '</tr></thead><tbody>';
     devices.forEach(function(d) {
       var seat = (d.seatNo||'') + (d.seatLetter||'');
       var safeDevice = JSON.stringify(d).replace(/'/g,"&​#39;");
       html += '<tr onclick=\'showDeviceDetail(' + safeDevice + ')\'>' +
-        '<td>'+(d.type||'-')+'</td><td>'+(d.assetNo||'-')+'</td><td>'+(d.serial||'-')+'</td>' +
-        '<td>'+(d.floor||'-')+'</td><td>'+(d.room||'-')+'</td><td>'+(seat||'-')+'</td><td>'+(d.department||'-')+'</td>' +
-        '<td>'+(d.lastMoveDate||'-')+'</td><td>'+(d.lastMoveUser||'-')+'</td>' +
+        '<td>'+(d.type||'-')+'</td>'+
+        '<td>'+(d.assetNo||'-')+'</td>'+
+        '<td>'+(d.serial||'-')+'</td>'+
+        '<td>'+(d.floor||'-')+'</td>'+
+        '<td>'+(d.room||'-')+'</td>'+
+        '<td>'+(seat||'-')+'</td>'+
+        '<td>'+(d.department||'-')+'</td>'+
         '</tr>';
     });
     html += '</tbody></table></div>';
     document.getElementById('devicesList').innerHTML = html;
-  }
-
-  // ===== تحميل آخر 10 عمليات تحرك (جدول أفقي) =====
-  async function loadRecentDevices() {
-    document.getElementById('recentDevicesList').innerHTML = '<tr><td colspan="10" class="loading">جاري التحميل...</td></tr>';
-    var recentDevices = await apiGet({ action: 'getRecentDevices' });
-    renderRecentDevices(recentDevices);
-  }
-
-  function renderRecentDevices(recentDevices) {
-    if (!recentDevices || recentDevices.length === 0) {
-      document.getElementById('recentDevicesList').innerHTML = '<tr><td colspan="10" class="loading">لا توجد عمليات حركة</td></tr>';
-      return;
-    }
-    var html = '';
-    recentDevices.forEach(function(device) {
-      var fromSeat = (device.fromSeatNo||'') + (device.fromSeatLetter||'');
-      var toSeat = (device.toSeatNo||'') + (device.toSeatLetter||'');
-      html += '<tr>' +
-        '<td>'+(device.user||'-')+'</td>' +
-        '<td>'+(device.date||'-')+'</td>' +
-        '<td>'+(device.time||'-')+'</td>' +
-        '<td>'+(device.type||'-')+'</td>' +
-        '<td>'+(device.assetNo||'-')+'</td>' +
-        '<td>'+(device.serial||'-')+'</td>' +
-        '<td>'+(device.from||'-')+(fromSeat?' ('+fromSeat+')':'')+'</td>' +
-        '<td>'+(device.to||'-')+(toSeat?' ('+toSeat+')':'')+'</td>' +
-        '<td>'+(device.ticketNo||'-')+'</td>' +
-        '<td>'+(device.notes||'-')+'</td>' +
-        '</tr>';
-    });
-    document.getElementById('recentDevicesList').innerHTML = html;
-  }
-
-  // ===== فلترة حسب الدور والغرفة (معدل مع infinite scroll) =====
-  async function filterByFloorRoom() {
-    var floor = document.getElementById('filterFloor').value;
-    var room = document.getElementById('filterRoom').value;
-    
-    if (!floor) {
-      alert('من فضلك اختر الدور');
-      return;
-    }
-    
-    filterOffset = 0;
-    isLoadingMore = false;
-    var container = document.getElementById('filterDevicesList');
-    container.innerHTML = '<div class="loading">جاري التحميل...</div>';
-    
-    var devices = await apiGet({ action: 'getDevicesByFloorRoom', floor: floor, room: room });
-    renderFilterDevices(devices, true);
-    
-    // إضافة infinite scroll
-    container.onscroll = function() {
-      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50 && !isLoadingMore) {
-        loadMoreDevices();
-      }
-    };
-  }
-
-  async function loadMoreDevices() {
-    if (isLoadingMore) return;
-    isLoadingMore = true;
-    
-    var floor = document.getElementById('filterFloor').value;
-    var room = document.getElementById('filterRoom').value;
-    
-    var moreDevices = await apiGet({ action: 'getDevicesByFloorRoom', floor: floor, room: room });
-    renderFilterDevices(moreDevices, false);
-    isLoadingMore = false;
-  }
-
-  function renderFilterDevices(devices, isFirstLoad = false) {
-    if (isFirstLoad) {
-      filterOffset = 0;
-      if (!devices || devices.length === 0) {
-        document.getElementById('filterDevicesList').innerHTML = '<div class="loading">لا توجد أجهزة مطابقة</div>';
-        return;
-      }
-    }
-    
-    if (!devices || devices.length === 0) {
-      return;
-    }
-    
-    var html = '<div class="devices-table-wrapper"><table class="devices-table"><thead><tr>' +
-      '<th>النوع</th><th>رقم الأصل</th><th>السيريال</th><th>الدور</th><th>الصالة/الغرفة</th><th>السيت</th><th>الإدارة</th><th>آخر تحرك</th><th>بواسطة</th>' +
-      '</tr></thead><tbody>';
-    devices.forEach(function(d) {
-      var seat = (d.seatNo||'') + (d.seatLetter||'');
-      var safeDevice = JSON.stringify(d).replace(/'/g,"&​#39;");
-      html += '<tr onclick=\'showDeviceDetail(' + safeDevice + ')\'>' +
-        '<td>'+(d.type||'-')+'</td><td>'+(d.assetNo||'-')+'</td><td>'+(d.serial||'-')+'</td>' +
-        '<td>'+(d.floor||'-')+'</td><td>'+(d.room||'-')+'</td><td>'+(seat||'-')+'</td><td>'+(d.department||'-')+'</td>' +
-        '<td>'+(d.lastMoveDate||'-')+'</td><td>'+(d.lastMoveUser||'-')+'</td>' +
-        '</tr>';
-    });
-    html += '</tbody></table></div>';
-    
-    var container = document.getElementById('filterDevicesList');
-    if (isFirstLoad) {
-      container.innerHTML = html;
-    } else {
-      container.innerHTML += html;
-    }
-    
-    filterOffset += devices.length;
   }
 
   async function showDeviceDetail(device) {
